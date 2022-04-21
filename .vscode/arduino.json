@@ -1,0 +1,7 @@
+{
+    "board": "arduino:avr:uno",
+    "output": "./build",
+    "port": "COM4",
+    "sketch": "Pikachu.ino",
+    "programmer": "arduino:avrisp"
+}
