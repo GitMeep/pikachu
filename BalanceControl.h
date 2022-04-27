@@ -10,7 +10,7 @@ class BalanceControl {
 public:
   static void init();
 
-  static float update(const float & angle, const unsigned int & dt);
+  static float update(const float & angle, const float & dt);
   static void setAngle(const float & angle);
 
 private:

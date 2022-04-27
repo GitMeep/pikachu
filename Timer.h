@@ -10,7 +10,7 @@
 */
 class Timer {
 public:
-    typedef void (*TimerHandler)(const unsigned int &);
+    typedef void (*TimerHandler)(const float &);
     
     Timer(unsigned long interval, TimerHandler handler);
 

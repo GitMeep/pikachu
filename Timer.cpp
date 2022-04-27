@@ -4,15 +4,15 @@
 Timer::Timer(unsigned long interval, TimerHandler handler)
 : _interval(interval),
 _handler(handler),
-_lastRun(millis()),
-_nextRun(_lastRun + _interval)
-{}
+_lastRun(millis()) {
+    _nextRun = _lastRun + _interval;
+}
 
 const unsigned long & Timer::update() {
     _thisRun = millis();
     if(_thisRun >= _nextRun) {
         _nextRun += _interval;
-        _handler(_thisRun - _lastRun);
+        _handler(((float)(_thisRun - _lastRun))/1000);
         _lastRun = _thisRun;
     }
 

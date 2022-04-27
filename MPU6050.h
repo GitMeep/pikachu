@@ -9,6 +9,7 @@ public:
   static void init();
   static void update();
   static int16Vec3 getAccel();
+  static int16Vec3 getGyro();
 
 private:
   const static int _I2CAddress=0x68;

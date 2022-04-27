@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "EncoderMotor.h"
+#include "Encodermotor.h"
 #include "Remote.h"
 #include "Timer.h"
 #include "MPU6050.h"
@@ -9,24 +9,24 @@
 void leftMotorInterruptHandler();
 void rightMotorInterruptHandler();
 
-EncoderMotor leftMotor(10, 6, 7, 2, 64 * 3, leftMotorInterruptHandler, 1, 0.001, 0.1);
-EncoderMotor rightMotor(11, 4, 5, 3, 64 * 3, rightMotorInterruptHandler, 1, 0.001, 0.1);
+EncoderMotor leftMotor = EncoderMotor(10, 6, 7, 2, 64 * 3, leftMotorInterruptHandler, 1, 0, 0);
+EncoderMotor rightMotor = EncoderMotor(11, 4, 5, 3, 64 * 3, rightMotorInterruptHandler, 1, 0, 0);
 
-void update(const unsigned int & dt);
+void update(const float & dt);
 Timer mainLoopTimer(10, update);
 
 PID speedController(2., 5., 1.);
 
 void leftMotorInterruptHandler() {
-  leftMotor.interrupt();
+  //leftMotor.interrupt();
 }
 
 void rightMotorInterruptHandler() {
-  rightMotor.interrupt();
+  //rightMotor.interrupt();
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   Serial.print("Running at "); Serial.print(1000./mainLoopTimer.getInterval()); Serial.println("Hz");
 
@@ -37,14 +37,14 @@ void setup() {
   speedController.setSetpoint(0);
   speedController.setLimits(-PI/8, PI/8);
 
-  leftMotor.setDirection(1);
-  rightMotor.setDirection(1);
+  leftMotor.setSpeed(0);
+  rightMotor.setSpeed(0);
 
   pinMode(A0, OUTPUT);
   pinMode(13, OUTPUT);
 }
 
-MPU6050::int16Vec3 accVec;
+MPU6050::int16Vec3 accVec, gyVec;
 float angle;
 float sinAngleTimesG;
 float angularAcceleration;
@@ -52,13 +52,12 @@ float averageSpeed;
 float totalSpeed = 0;
 float rightSpeed;
 float leftSpeed;
-void update(const unsigned int & dt) {
+void update(const float & dt) {
   digitalWrite(A0, HIGH);
 
   // Fjernstyring
   Remote::update();
 
-  
   // TODO: Hastighedsstyring
   averageSpeed = (leftMotor.getSpeed() + rightMotor.getSpeed()) / 2;
   //BalanceControl::setAngle(speedController.update(averageSpeed, dt));
@@ -66,29 +65,20 @@ void update(const unsigned int & dt) {
   // Balancestyring
   MPU6050::update();
   accVec = MPU6050::getAccel();
-  angle = atan2(accVec.y, accVec.z);
+  gyVec = MPU6050::getGyro();
+  angle = 0.98 * (angle + gyVec.x * dt) + 0.02 * atan2(accVec.y, accVec.z);
   //sinAngleTimesG = accVec.y; // y acceleration will be linearly proportional to sin of the angle
   totalSpeed = BalanceControl::update(angle, dt); // sin angle er måske ikke nødvendigt, test med og uden
 
   // Biasing
-  rightSpeed = ((float)Remote::getState().steering + 1024) / 2048 * 2 * totalSpeed;
+  rightSpeed = totalSpeed * (1024. + Remote::getState().steering) / 2048.;
   leftSpeed = totalSpeed - rightSpeed;
 
+  Serial.println(angle);
+
   // Motorstyring
-  //leftMotor.setSpeed(abs(leftSpeed));
-  rightMotor.setSpeed(abs(rightSpeed));
-
-  if(totalSpeed > 0) {
-    leftMotor.setDirection(1);
-    rightMotor.setDirection(1);
-  } else {
-    leftMotor.setDirection(-1);
-    rightMotor.setDirection(-1);
-  }
-
-  Serial.println(totalSpeed);
-  analogWrite(10, abs(totalSpeed));
-  analogWrite(11, abs(totalSpeed));
+  leftMotor.setSpeed(leftSpeed);
+  rightMotor.setSpeed(rightSpeed);
 
   leftMotor.update(dt);
   rightMotor.update(dt);

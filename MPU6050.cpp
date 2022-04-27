@@ -22,8 +22,15 @@ void MPU6050::update() {
   _AcX=Wire.read()<<8|Wire.read();
   _AcY=Wire.read()<<8|Wire.read();
   _AcZ=Wire.read()<<8|Wire.read();
+  _GyX=Wire.read()<<8|Wire.read();
+  _GyY=Wire.read()<<8|Wire.read();
+  _GyZ=Wire.read()<<8|Wire.read();
 }
 
 MPU6050::int16Vec3 MPU6050::getAccel() {
-    return {_AcX, _AcY, _AcZ};
-  }
+  return {_AcX, _AcY, _AcZ};
+}
+
+MPU6050::int16Vec3 MPU6050::getGyro() {
+  return {_GyX, _GyY, _GyZ};
+}
