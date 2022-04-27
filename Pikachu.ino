@@ -66,7 +66,7 @@ void update(const float & dt) {
   MPU6050::update();
   accVec = MPU6050::getAccel();
   gyVec = MPU6050::getGyro();
-  angle = (0.98 * angle + ) atan2(accVec.y, accVec.z);
+  angle = 0.98 * (angle + gyVec.x * dt) + 0.02 * atan2(accVec.y, accVec.z);
   //sinAngleTimesG = accVec.y; // y acceleration will be linearly proportional to sin of the angle
   totalSpeed = BalanceControl::update(angle, dt); // sin angle er måske ikke nødvendigt, test med og uden
 
