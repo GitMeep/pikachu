@@ -6,18 +6,19 @@ public:
   EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uint8_t pinB, const uint8_t encoderPin, const float & encoderCpr, void (*encoderInt)(), const float & Kp, const float & Ki, const float & Kd);
 
   void interrupt();
-  void update(const unsigned int & dt);
-  void setDirection(const int8_t & direction);
+  void update(const float & dt);
   void setSpeed(const float & speed);
+  void setTargetPosition(const long & position);
+  long getTargetPosition();
   float getSpeed();
 
 private:
-  unsigned long _position;
-  unsigned long _lastPosition;
-  unsigned long _currentPosition;
+  long _targetPosition; // instantaneous target position
+  float _speed; // speed in rotations per second
+  char _direction;
+  long _measuredPosition; // measured position
+  long _currentPosition; // used to make a copy of the measured position in the beginning of each update
 
-  float _filteredSpeed;
-  int8_t _direction;
   float _cpr;
 
   uint8_t _motorPin;

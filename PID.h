@@ -7,7 +7,8 @@ public:
     void setSetpoint(const float & setpoint);
     void addSetpoint(const float & difference);
     void setLimits(const float & minOut, const float & maxOut);
-    float update(const float & input, const unsigned int & dt);
+    void setLimiting(bool limiting);
+    float update(const float & input, const float & dt);
 
 private:
     // PID parametre
@@ -15,6 +16,7 @@ private:
     float _setpoint;
 
     float _minOut, _maxOut;
+    bool _enableLimits;
 
     // variabler der skal bruges under beregninger, så de ikke skal allokeres hver gang
     float _error; // fejl mellem måling og setpoint

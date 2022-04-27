@@ -5,10 +5,11 @@ PID::PID(const float & kP, const float & kI, const float & kD)
 : _kP(kP), _kI(kI), _kD(kD),
 _minOut(40.), _maxOut(255.),
 _lastError(0.),
-_integratedError(0.)
+_integratedError(0.),
+_enableLimits(true)
 {}
 
-float PID::update(const float & input, const unsigned int & dt) {
+float PID::update(const float & input, const float & dt) {
     _output = 0; // nulstil output
     _error = _setpoint - input; // beregn error
     
@@ -22,10 +23,11 @@ float PID::update(const float & input, const unsigned int & dt) {
     if(isnan(_integratedError)) _integratedError = 0;
 
     // derivative
-    _output += _kD * 1000. * (_error - _lastError) / dt; // læg differential-ledet til outputtet (gang med 1000 for at få mere håndterbare værdier)
+    _output += _kD * (_error - _lastError) / dt; // læg differential-ledet til outputtet (gang med 1000 for at få mere håndterbare værdier)
     _lastError = _error; // opdater sidste fejl
 
-    return constrain(_output, _minOut, _maxOut);
+    if(_enableLimits) return constrain(_output, _minOut, _maxOut);
+    return _output;
 }
 
 void PID::setSetpoint(const float & setpoint) {
@@ -39,4 +41,8 @@ void PID::addSetpoint(const float & difference) {
 void PID::setLimits(const float & minOut, const float & maxOut) {
     _minOut = minOut;
     _maxOut = maxOut;
+}
+
+void PID::setLimiting(bool limiting) {
+    _enableLimits = limiting;
 }
