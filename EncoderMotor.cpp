@@ -28,12 +28,14 @@ void EncoderMotor::update(const float & dt) {
   _pid.setSetpoint(_targetPosition);
   _targetPosition += _speed * _cpr * dt;
 
-  analogWrite(_motorPin, _pid.update(_currentPosition, dt));
+  //analogWrite(_motorPin, _pid.update(_currentPosition, dt));
 }
 
 // target speed in revolutions per second
 void EncoderMotor::setSpeed(const float & speed) {
   _speed = abs(speed);
+
+  analogWrite(_motorPin, _speed);
 
   if(speed == 0) _direction = 0;
   if(speed < 0) {
