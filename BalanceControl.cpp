@@ -1,14 +1,13 @@
 #include "BalanceControl.h"
 
-float BalanceControl::_measuredAngle = 0;
-PID BalanceControl::_pid(3, 0, 0);
+const float Ku = 18;
+const float Tu = 1;
 
-void BalanceControl::init() {
-  _pid.setLimiting(false);
-}
+float BalanceControl::_measuredAngle = 0;
+PID BalanceControl::_pid(0.6 * Ku, 1.4*Ku/Tu, 10.*Ku*Tu/40);
 
 float BalanceControl::update(const float & angle, const float & dt) {
-  _measuredAngle += 0.6 * (angle - _measuredAngle);
+  _measuredAngle = angle;
   return _pid.update(BalanceControl::_measuredAngle, dt);
 }
 

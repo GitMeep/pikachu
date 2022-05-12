@@ -5,11 +5,7 @@ class EncoderMotor {
 public:
   EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uint8_t pinB, const uint8_t encoderPin, const float & encoderCpr, void (*encoderInt)(), const float & Kp, const float & Ki, const float & Kd);
 
-  void interrupt();
-  void update(const float & dt);
   void setSpeed(const float & speed);
-  void setTargetPosition(const long & position);
-  long getTargetPosition();
   float getSpeed();
 
 private:

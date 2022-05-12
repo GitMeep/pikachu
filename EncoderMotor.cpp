@@ -9,7 +9,7 @@ EncoderMotor::EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uin
   _speed(0),
   _direction(1),
   _pid(Kp, Ki, Kd) {
-  attachInterrupt(digitalPinToInterrupt(encoderPin), encoderInt, FALLING);
+  //attachInterrupt(digitalPinToInterrupt(encoderPin), encoderInt, FALLING);
 
   analogWrite(_motorPin, 0);
 
@@ -19,42 +19,23 @@ EncoderMotor::EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uin
   setSpeed(0);
 }
 
-void EncoderMotor::interrupt() {
-  _measuredPosition += _direction;
-}
-
-void EncoderMotor::update(const float & dt) {
-  _currentPosition = _measuredPosition;
-  _pid.setSetpoint(_targetPosition);
-  _targetPosition += _speed * _cpr * dt;
-
-  //analogWrite(_motorPin, _pid.update(_currentPosition, dt));
-}
-
 // target speed in revolutions per second
 void EncoderMotor::setSpeed(const float & speed) {
   _speed = abs(speed);
+  analogWrite(_motorPin, constrain(_speed, 0., 255.));
 
-  analogWrite(_motorPin, _speed);
-
-  if(speed == 0) _direction = 0;
   if(speed < 0) {
     _direction = -1;
-    digitalWrite(_pinA, LOW);
-    digitalWrite(_pinB, HIGH);
-  } else {
+    digitalWrite(_pinA, 0);
+    digitalWrite(_pinB, 1);
+  } else if(speed > 0) {
     _direction = 1;
-    digitalWrite(_pinA, HIGH);
-    digitalWrite(_pinB, LOW);
+    digitalWrite(_pinA, 1);
+    digitalWrite(_pinB, 0);
+  } else { // speed == 0
+    digitalWrite(_pinA, 0);
+    digitalWrite(_pinB, 0);
   }
-}
-
-void EncoderMotor::setTargetPosition(const long & position) {
-  _targetPosition = position;
-}
-
-long EncoderMotor::getTargetPosition() {
-  return _targetPosition;
 }
 
 float EncoderMotor::getSpeed() {

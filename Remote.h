@@ -12,7 +12,7 @@
 class Remote {
 public:
     struct ControlState {
-        unsigned long power; // motor power (mellem 0 og )
+        unsigned long power; // motor power (mellem 0 og 511)
         long steering; // retning hvori der skal styres (mellem -1024 for venstre og +1024 for højre, 0 ligeud)
         char direction; // retning som skal køres (frem: 1, tilbage: -1, stille: 0)
         bool fire; // hvorvidt kannonen skal køre
@@ -22,6 +22,9 @@ public:
     static const ControlState & getState(); // få tilstanden
     static bool isConnected(); // er fjernbetjeningen forbundet?
 
+    static void init(); // set indstillinger på modul
+    static void reset();
+
 private:
     // timeout
     unsigned const static int _timeout = 500; // tid i ms som skal gå fra sidste modtagede besked til at forbindelsen timer ud
@@ -29,5 +32,4 @@ private:
     static bool _connected; // tror vi at forbindelsen er oppe?
 
     static ControlState _state; // tilstanden af fjernbetjeningen
-
 };

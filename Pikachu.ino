@@ -1,102 +1,151 @@
 #include <Arduino.h>
-#include "Encodermotor.h"
+#include "Ultrasound.h"
+#include "EncoderMotor.h"
 #include "Remote.h"
 #include "Timer.h"
-#include "MPU6050.h"
 #include "BalanceControl.h"
+#include "Display.h"
 #include <math.h>
+#include <MPU6050.h>
 
 void leftMotorInterruptHandler();
 void rightMotorInterruptHandler();
 
-EncoderMotor leftMotor = EncoderMotor(10, 6, 7, 2, 64 * 3, leftMotorInterruptHandler, 1, 0, 0);
-EncoderMotor rightMotor = EncoderMotor(11, 4, 5, 3, 64 * 3, rightMotorInterruptHandler, 1, 0, 0);
+const byte soundPin = 8;
+const byte projectilePin = 11;
+
+EncoderMotor rightMotor = EncoderMotor(9, 6, 7, 2, 64 * 5, leftMotorInterruptHandler, 1, 0, 0);
+EncoderMotor leftMotor = EncoderMotor(10, 4, 5, 3, 64 * 5, rightMotorInterruptHandler, 1, 0, 0);
 
 void update(const float & dt);
-Timer mainLoopTimer(10, update);
+//void balancePID(const float & dt);
+//Timer balancePIDTimer(10, balancePID);
+Timer mainLoopTimer(20, update);
 
-PID speedController(2., 5., 1.);
+/*
+MPU6050 mpu;
+int16_t accZ, accX, gyroRate;
+const float sp = 1.8;
+*/
 
-void leftMotorInterruptHandler() {
-  //leftMotor.interrupt();
-}
-
-void rightMotorInterruptHandler() {
-  //rightMotor.interrupt();
+void playSound() {
+  digitalWrite(soundPin, HIGH);
+  digitalWrite(soundPin, LOW);
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  Serial.print("Running at "); Serial.print(1000./mainLoopTimer.getInterval()); Serial.println("Hz");
+  //Serial.println("Error,Integral,Derivative");
 
-  MPU6050::init();
-  BalanceControl::init();
+  /*
+  mpu.initialize();
+  mpu.setZAccelOffset(920);
+  mpu.setXAccelOffset(-1515);
+  mpu.setYGyroOffset(-47);
 
-  BalanceControl::setAngle(0);
-  speedController.setSetpoint(0);
-  speedController.setLimits(-PI/8, PI/8);
+  mpu.setRate(0);
+  mpu.setDLPFMode(MPU6050_DLPF_BW_256);
+  mpu.setClockSource(MPU6050_CLOCK_PLL_YGYRO);
+  */
+
+  //BalanceControl::setAngle(sp);
+  //speedController.setSetpoint(0);
+  //speedController.setLimits(-PI/8, PI/8);
 
   leftMotor.setSpeed(0);
   rightMotor.setSpeed(0);
 
-  pinMode(A0, OUTPUT);
+  Remote::init();
+  Ultrasound::init();
+  Display::init();
+  Display::select(Display::AMONGUS);
+
   pinMode(13, OUTPUT);
+  pinMode(soundPin, OUTPUT);
+  pinMode(projectilePin, OUTPUT);
+
+  digitalWrite(soundPin, LOW);
+  digitalWrite(projectilePin, LOW);
 }
 
-MPU6050::int16Vec3 accVec, gyVec;
-float angle = 0;
-float sinAngleTimesG;
-float angularAcceleration;
-float averageSpeed;
-float totalSpeed = 0;
-float rightSpeed;
-float leftSpeed;
-void update(const float & dt) {
-  digitalWrite(A0, HIGH);
+bool resetTimerEnabled = false;
+unsigned long resetTime = 0;
 
+int totalSpeed, rightSpeed, leftSpeed;
+void update(const float & dt) {
   // Fjernstyring
   Remote::update();
+  Ultrasound::ping();
 
-  // TODO: Hastighedsstyring
-  averageSpeed = (leftMotor.getSpeed() + rightMotor.getSpeed()) / 2;
-  //BalanceControl::setAngle(speedController.update(averageSpeed, dt));
+  auto remoteState = Remote::getState();
+  totalSpeed = ((int)remoteState.direction) * remoteState.power/2;
   
-  // Balancestyring
-  MPU6050::update();
-  accVec = MPU6050::getAccel();
-  gyVec = MPU6050::getGyro();
-  angle = 0.8 * (angle + gyVec.x * dt) + 0.2 * atan2(accVec.y, accVec.z);
-  //sinAngleTimesG = accVec.y; // y acceleration will be linearly proportional to sin of the angle
-  totalSpeed = BalanceControl::update(angle, dt); // sin angle er måske ikke nødvendigt, test med og uden
+  if(remoteState.fire) {
+    Display::select(Display::TARGET);
+    digitalWrite(projectilePin, HIGH);
+    playSound();
+  } else {
+    digitalWrite(projectilePin, LOW);
+  }
+
+  unsigned int ultrasoundDistance = Ultrasound::getDistance();
+  if(ultrasoundDistance < 300 && remoteState.direction == 1) {
+    totalSpeed = 0;
+  }
+
+  if(ultrasoundDistance < 280) {
+    totalSpeed = -150;
+    Display::select(Display::ANGRY);
+    resetTime = millis() + 5000;
+    resetTimerEnabled = true;
+    playSound();
+  }
+
+  if(millis() >= resetTime && resetTimerEnabled) {
+    Display::select(Display::NEUTRAL);
+    resetTimerEnabled = false;
+  }
 
   // Biasing
-  rightSpeed = totalSpeed * (1024. + Remote::getState().steering) / 2048.;
+  rightSpeed = totalSpeed * (512 + remoteState.steering) / 1200;
   leftSpeed = totalSpeed - rightSpeed;
-
-  Serial.println(angle);
 
   // Motorstyring
   leftMotor.setSpeed(leftSpeed);
   rightMotor.setSpeed(rightSpeed);
-
-  leftMotor.update(dt);
-  rightMotor.update(dt);
-
-  digitalWrite(A0, LOW);
 }
 
-void loop() {
-  /*
-  timeToNext = mainLoopTimer.update() - millis();
-  if(timeToNext > 1) {
-    delay(0.9 * timeToNext);
-  }
-  */
+/*
+float accAngle, dgyroAngle;
+float gyroY;
+const float gyroWeight = 0.9;
+float angle = 0;
+float angularAcceleration;
+float totalSpeed = 0;
+void balancePID(const float & dt) {
+  // Balancestyring
+  accZ = mpu.getAccelerationZ();
+  accX = mpu.getAccelerationX();
 
-  if(mainLoopTimer.update() < millis()) {
-    digitalWrite(13, HIGH); // brug den indbyggede LED til at indikere hvorvidt timingen er overskredet
-  } else {
-    digitalWrite(13, LOW);
+  gyroY = mpu.getRotationY();
+  
+  gyroRate = gyroY / 131.068; // map from +-32767 to +-250
+
+  accAngle = atan2(accX, accZ)*RAD_TO_DEG;
+  dgyroAngle = gyroRate * dt;
+
+  angle = gyroWeight * (angle + dgyroAngle) + (1 - gyroWeight) * (accAngle);
+
+  totalSpeed = BalanceControl::update(angle, dt);
+  if(sp-1 < angle && angle < sp+1) { // deadzone
+    totalSpeed = 0;
+  }
+}
+*/
+
+void loop() {
+  if(mainLoopTimer.update() - 2 > millis()) {
+    Display::drawRow(); // tegn på displayet hvis der er nok tid
   }
 }
