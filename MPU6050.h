@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+* Klasse til at kommunikere med accelerometer/gyroskop.
+* Endte med at bruge et tredjepartsbibliotek i stedet.
+*/
 class MPU6050 {
 public:
   struct int16Vec3 {

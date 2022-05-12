@@ -8,17 +8,19 @@
 #include <math.h>
 #include <MPU6050.h>
 
-void leftMotorInterruptHandler();
-void rightMotorInterruptHandler();
-
+// Pins til lyd og projektil. Disse er så simple at de ikke behøver deres egen klasse.
 const byte soundPin = 8;
 const byte projectilePin = 11;
 
-EncoderMotor rightMotor = EncoderMotor(9, 6, 7, 2, 64 * 5, leftMotorInterruptHandler, 1, 0, 0);
-EncoderMotor leftMotor = EncoderMotor(10, 4, 5, 3, 64 * 5, rightMotorInterruptHandler, 1, 0, 0);
+// motor-objekter til hver motor
+EncoderMotor rightMotor = EncoderMotor(9, 6, 7, 2, 64 * 5, nullptr, 1, 0, 0);
+EncoderMotor leftMotor = EncoderMotor(10, 4, 5, 3, 64 * 5, nullptr, 1, 0, 0);
 
+// fordeklarering af timer funktioner
 void update(const float & dt);
 //void balancePID(const float & dt);
+
+// software timere til at køre balance og andet
 //Timer balancePIDTimer(10, balancePID);
 Timer mainLoopTimer(20, update);
 
@@ -28,6 +30,7 @@ int16_t accZ, accX, gyroRate;
 const float sp = 1.8;
 */
 
+// hjælper funktion til at pulse lyd-pin
 void playSound() {
   digitalWrite(soundPin, HIGH);
   digitalWrite(soundPin, LOW);
@@ -53,15 +56,12 @@ void setup() {
   //speedController.setSetpoint(0);
   //speedController.setLimits(-PI/8, PI/8);
 
-  leftMotor.setSpeed(0);
-  rightMotor.setSpeed(0);
-
+  // intialiser diverse moduler
   Remote::init();
   Ultrasound::init();
   Display::init();
   Display::select(Display::AMONGUS);
 
-  pinMode(13, OUTPUT);
   pinMode(soundPin, OUTPUT);
   pinMode(projectilePin, OUTPUT);
 
@@ -74,13 +74,12 @@ unsigned long resetTime = 0;
 
 int totalSpeed, rightSpeed, leftSpeed;
 void update(const float & dt) {
-  // Fjernstyring
+  // Opdater fjernbetjening og ultralyd
   Remote::update();
   Ultrasound::ping();
 
+  // få tilstand af fjernbetjening og affyr projektil hvis knappen på fjernbetjeningen trykkes
   auto remoteState = Remote::getState();
-  totalSpeed = ((int)remoteState.direction) * remoteState.power/2;
-  
   if(remoteState.fire) {
     Display::select(Display::TARGET);
     digitalWrite(projectilePin, HIGH);
@@ -89,11 +88,13 @@ void update(const float & dt) {
     digitalWrite(projectilePin, LOW);
   }
 
+  // få ultralydsafstand og stands hvis robotten er ved at køre ind i noget
   unsigned int ultrasoundDistance = Ultrasound::getDistance();
   if(ultrasoundDistance < 300 && remoteState.direction == 1) {
     totalSpeed = 0;
   }
 
+  // bak hvis robotten er for tæt på noget, vis et surt ansigt og afspil lyd
   if(ultrasoundDistance < 280) {
     totalSpeed = -150;
     Display::select(Display::ANGRY);
@@ -102,20 +103,23 @@ void update(const float & dt) {
     playSound();
   }
 
+  // nulstil ansigt efter lidt tid
   if(millis() >= resetTime && resetTimerEnabled) {
     Display::select(Display::NEUTRAL);
     resetTimerEnabled = false;
   }
 
-  // Biasing
+  // udregn en "total" hasitghed og fordel den mellem hjulene for at dreje
+  totalSpeed = ((int)remoteState.direction) * remoteState.power/2;
   rightSpeed = totalSpeed * (512 + remoteState.steering) / 1200;
   leftSpeed = totalSpeed - rightSpeed;
 
-  // Motorstyring
+  // opdater motorhastigheder
   leftMotor.setSpeed(leftSpeed);
   rightMotor.setSpeed(rightSpeed);
 }
 
+// ubenyttet funktion til at holde balancen
 /*
 float accAngle, dgyroAngle;
 float gyroY;
@@ -145,7 +149,8 @@ void balancePID(const float & dt) {
 */
 
 void loop() {
+  // lad displayet tegne hvis der er mere end 2 ms til næste gang hoved-loopet skal køre
   if(mainLoopTimer.update() - 2 > millis()) {
-    Display::drawRow(); // tegn på displayet hvis der er nok tid
+    Display::drawRow();
   }
 }

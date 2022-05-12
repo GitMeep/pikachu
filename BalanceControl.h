@@ -4,7 +4,7 @@
 
 /*
 * Denne klasses opgave er at holde robotten ved en specifik vinkel ved hjælp
-* af et accelermoeter og en PID regulator.
+* af en PID regulator som får en vinkel udefra.
 */
 class BalanceControl {
 public:

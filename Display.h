@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+* Denne klasse holder styr på hvad displayet skal vise, og er ansvarlig
+* for at tegne det.
+*/
 class Display {
 public:
   enum Expression {

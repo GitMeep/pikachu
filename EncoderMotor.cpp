@@ -11,15 +11,14 @@ EncoderMotor::EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uin
   _pid(Kp, Ki, Kd) {
   //attachInterrupt(digitalPinToInterrupt(encoderPin), encoderInt, FALLING);
 
-  analogWrite(_motorPin, 0);
-
   pinMode(_pinA, OUTPUT);
   pinMode(_pinB, OUTPUT);
 
+  // sørg for at motorene ikke kører
   setSpeed(0);
 }
 
-// target speed in revolutions per second
+// set fart og retning
 void EncoderMotor::setSpeed(const float & speed) {
   _speed = abs(speed);
   analogWrite(_motorPin, constrain(_speed, 0., 255.));
