@@ -8,10 +8,10 @@
 */
 class BalanceControl {
 public:
-  static float update(const float & angle, const float & dt);
-  static void setAngle(const float & angle);
+  static float update(const float & angle, const float & dt); // opdaterer PID regulatoren
+  static void setAngle(const float & angle); // sæt den ønskede vinkel
 
 private:
-  static float _measuredAngle;
-  static PID _pid;
+  static float _measuredAngle; // målt vinkel
+  static PID _pid; // PID objekt
 };

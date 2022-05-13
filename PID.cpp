@@ -23,7 +23,7 @@ float PID::update(const float & input, const float & dt) {
   _output += _kI * integ; // læg integral-ledet til outputtet
 
   // afledt led
-  _filteredDerivative += 0.2 * (((input - _lastInput) / dt) - _filteredDerivative);
+  _filteredDerivative += 0.2 * (((input - _lastInput) / dt) - _filteredDerivative); // lavpas filter på afledt led fordi den er sensitiv overfor støj
   _output -= _kD * _filteredDerivative; // læg differential-ledet til outputtet (gang med 1000 for at få mere håndterbare værdier)
   _lastInput = input; // opdater sidste fejl
 
@@ -32,10 +32,12 @@ float PID::update(const float & input, const float & dt) {
   return _output;
 }
 
+// set setpoint :)
 void PID::setSetpoint(const float & setpoint) {
   _setpoint = setpoint;
 }
 
+// tilføj en værdi til setpoint
 void PID::addSetpoint(const float & difference) {
   _setpoint += difference;
 }

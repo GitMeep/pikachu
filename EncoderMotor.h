@@ -6,9 +6,9 @@
 * med at bruge encoderne, så den sætter faktisk bare hastighed og retning
 * uden noget feedback.
 */
-
 class EncoderMotor {
 public:
+  // konstruer en EncoderMotor. Encoder- og PID-relaterede ting bliver ikke brugt alligevel.
   EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uint8_t pinB, const uint8_t encoderPin, const float & encoderCpr, void (*encoderInt)(), const float & Kp, const float & Ki, const float & Kd);
 
   void setSpeed(const float & speed);

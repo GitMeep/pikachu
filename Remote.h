@@ -11,6 +11,7 @@
 */
 class Remote {
 public:
+    // datastruktur der beskriver en besked fra fjernbetjeningen
     struct ControlState {
         unsigned long power; // motor power (mellem 0 og 511)
         long steering; // retning hvori der skal styres (mellem -1024 for venstre og +1024 for højre, 0 ligeud)
@@ -23,7 +24,7 @@ public:
     static bool isConnected(); // er fjernbetjeningen forbundet?
 
     static void init(); // set indstillinger på modul
-    static void reset();
+    static void reset(); // reboot modul (virker ikke)
 
 private:
     // timeout

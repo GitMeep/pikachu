@@ -20,9 +20,10 @@ EncoderMotor::EncoderMotor(const uint8_t motorPin, const uint8_t pinA, const uin
 
 // set fart og retning
 void EncoderMotor::setSpeed(const float & speed) {
-  _speed = abs(speed);
-  analogWrite(_motorPin, constrain(_speed, 0., 255.));
+  _speed = speed;
+  analogWrite(_motorPin, constrain(abs(_speed), 0., 255.)); // motorens "power" er altid positiv, retningen sættes med A og B pins'ne nedenfor
 
+  // sæt retning, og brems hvis fart er 0
   if(speed < 0) {
     _direction = -1;
     digitalWrite(_pinA, 0);
@@ -37,6 +38,7 @@ void EncoderMotor::setSpeed(const float & speed) {
   }
 }
 
+// få motorens hastighed
 float EncoderMotor::getSpeed() {
   return _speed;
 }
